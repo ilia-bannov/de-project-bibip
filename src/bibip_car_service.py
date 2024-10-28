@@ -53,21 +53,21 @@ class CarService:
 
     def _get_car_index_by_vin(self, vin: str) -> CarIndex | None:
         for index in self.car_index:
-            if index.vin == vin:
+            if index.id == vin:
                 return index
 
         return None
 
     def _get_model_index_by_id(self, id: int) -> ModelIndex | None:
         for index in self.model_index:
-            if index.model_id == id:
+            if index.id == id:
                 return index
 
         return None
 
     def _get_sale_index_by_car_vin(self, car_vin: str) -> SaleIndex | None:
         for index in self.sale_index:
-            if index.car_vin == car_vin:
+            if index.id == car_vin:
                 return index
 
         return None
@@ -130,6 +130,12 @@ class CarService:
             return car
         return None
 
+    def _update_index(self, file_name: str, new_index, index) -> None:
+        index.append(new_index)
+        index.sort(key=lambda i: i.id)
+        lines = [i.get_index_string() for i in index]
+        self.file_service.rewrite_file(file_name, lines)
+
     # Задание 1. Сохранение автомобилей и моделей
     def add_model(self, model: Model) -> Model:
         self.file_service.append_file(
@@ -138,10 +144,7 @@ class CarService:
         )
 
         new_index = ModelIndex(model.id, len(self.model_index))
-        self.model_index.append(new_index)
-        self.model_index.sort(key=lambda i: i.model_id)
-        lines = [i.get_index_string() for i in self.model_index]
-        self.file_service.rewrite_file(MODELS_INDEX_FILE_NAME, lines)
+        self._update_index(MODELS_INDEX_FILE_NAME, new_index, self.model_index)
 
         return model
 
@@ -150,10 +153,7 @@ class CarService:
         self.file_service.append_file(car.get_car_string(), CARS_FILE_NAME)
 
         new_index = CarIndex(car.vin, len(self.car_index))
-        self.car_index.append(new_index)
-        self.car_index.sort(key=lambda i: i.vin)
-        lines = [i.get_index_string() for i in self.car_index]
-        self.file_service.rewrite_file(CARS_INDEX_FILE_NAME, lines)
+        self._update_index(CARS_INDEX_FILE_NAME, new_index, self.car_index)
 
         return car
 
@@ -162,10 +162,7 @@ class CarService:
         self.file_service.append_file(sale.get_sale_string(), SALES_FILE_NAME)
 
         new_index = SaleIndex(sale.car_vin, len(self.sale_index))
-        self.sale_index.append(new_index)
-        self.sale_index.sort(key=lambda i: i.car_vin)
-        lines = [i.get_index_string() for i in self.sale_index]
-        self.file_service.rewrite_file(SALES_INDEX_FILE_NAME, lines)
+        self._update_index(SALES_INDEX_FILE_NAME, new_index, self.sale_index)
 
         return self._update_car_status_by_vin(sale.car_vin, CarStatus.sold)
 
